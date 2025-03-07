@@ -63,7 +63,7 @@ export const CampaignLiveEmailTemplate: React.FC<Readonly<CampaignLiveEmailTempl
         color: '#374151',
         marginBottom: '24px',
       }}>
-        Congratulations! Your first campaign <strong>{campaignName}</strong> is now live and running. Your message is being delivered to {recipientCount} recipients.
+        Great news! Your campaign <strong>{campaignName}</strong> is now live and running. Your message is being delivered to {recipientCount} recipients.
       </p>
 
       {/* Campaign Stats Section */}
