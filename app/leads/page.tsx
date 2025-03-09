@@ -8,6 +8,8 @@ import { useUser } from "@/contexts/user-context";
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 import { toast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
+import { CookieRefreshDialog } from "@/components/ui/cookie-refresh-dialog";
+import LeadDetailsDialog from "@/components/leads/lead-details-dialog";
 
 interface LeadList {
   id: string;
@@ -15,6 +17,15 @@ interface LeadList {
   totalLeads: number;
   createdAt: string;
   status?: string;
+  errorType?: string;
+}
+
+// Add these type declarations at the top of the file, outside your component
+declare global {
+  interface Window {
+    leadPollingInterval: NodeJS.Timeout;
+    leadPollingActive: boolean;
+  }
 }
 
 export default function LeadsPage() {
@@ -26,11 +37,16 @@ export default function LeadsPage() {
   const [leadToDelete, setLeadToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
+  const [cookieErrorDialogOpen, setCookieErrorDialogOpen] = useState(false);
+  const [refreshCounter, setRefreshCounter] = useState(0);
+  const [selectedLead, setSelectedLead] = useState<{ id: string; name: string } | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout | undefined;
     
     const fetchLeads = async () => {
+      console.log('Fetching leads', refreshCounter);
       if (!userId) return;
       
       try {
@@ -38,20 +54,36 @@ export default function LeadsPage() {
         if (!response.ok) throw new Error('Failed to fetch lead lists');
         
         const data = await response.json();
+        console.log('API response data:', data);
         
         const formattedLeads = data.leads.map((lead: any) => ({
           id: lead.id,
           leadName: lead.leadName,
           totalLeads: lead.totalLeads,
           createdAt: lead.createdAt,
-          status: lead.status
+          status: lead.status,
+          errorType: lead.errorType
         }));
+        
+        console.log('Formatted leads with error types:', formattedLeads);
+        
+        // Check for auth errors in any lead
+        const authErrorLead = formattedLeads.find((lead: LeadList) => 
+          lead.errorType === 'auth_error'
+        );
+        
+        console.log('Auth error lead found:', authErrorLead);
+        
+        if (authErrorLead) {
+          console.log('Auth error detected, showing dialog');
+          setCookieErrorDialogOpen(true);
+        }
         
         setLeadLists(formattedLeads);
         
         // Check if any leads are still in progress
         const hasInProgressLeads = formattedLeads.some(
-          (lead: any) => lead.status === 'in_progress'
+          (lead: LeadList) => lead.status === 'in_progress'
         );
         
         // Actually stop polling when complete
@@ -78,7 +110,7 @@ export default function LeadsPage() {
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [userId]);
+  }, [userId, refreshCounter]);
 
   const handleDeleteLead = async (leadId: string) => {
     try {
@@ -111,15 +143,8 @@ export default function LeadsPage() {
 
   const refreshLeads = async () => {
     try {
-      const response = await fetch(`/api/leads?userId=${userId}`);
-      const data = await response.json();
-      setLeadLists(data.leads.map((lead: any) => ({
-        id: lead.id,
-        leadName: lead.leadName,
-        totalLeads: lead.totalLeads,
-        createdAt: lead.createdAt,
-        status: lead.status
-      })));
+      setRefreshCounter(prev => prev + 1);
+      console.log('Refresh counter incremented, polling should start');
     } catch (error) {
       console.error('Error refreshing leads:', error);
     }
@@ -141,6 +166,40 @@ export default function LeadsPage() {
     }
   };
 
+  const handleRefreshCookies = async () => {
+    console.log('Refreshing cookies dialog');
+    
+    try {
+      // Find the lead with auth error
+      const authErrorLead = leadLists.find(lead => lead.errorType === 'auth_error');
+      
+      if (authErrorLead) {
+        // Clear the error status in Redis
+        await fetch('/api/leads/clear-error', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ leadId: authErrorLead.id }),
+        });
+        
+        console.log(`Cleared error status for lead ${authErrorLead.id}`);
+      }
+      
+      // Navigate to Twitter settings
+      window.location.href = '/settings?tab=twitter';
+    } catch (error) {
+      console.error('Error clearing lead error:', error);
+    } finally {
+      setCookieErrorDialogOpen(false);
+    }
+  };
+
+  const handleViewDetails = (id: string, name: string) => {
+    setSelectedLead({ id, name });
+    setDetailsDialogOpen(true);
+  };
+
   if (isImporting) {
     return <ImportLeads onBack={() => setIsImporting(false)} refreshLeads={refreshLeads} />;
   }
@@ -158,7 +217,7 @@ export default function LeadsPage() {
         </Button>
       </div>
 
-      <div className="border-2 rounded-lg p-6">
+      <div className="border-2 rounded-lg p-6" key={`leads-container-${Date.now()}`}>
         {loading ? (
           <div className="text-center py-4 text-gray-500">Loading lead lists...</div>
         ) : leadLists.length > 0 ? (
@@ -173,6 +232,7 @@ export default function LeadsPage() {
                 status={list.status}
                 onCreateAutomation={() => handleCreateAutomation(list.id, list.leadName)}
                 onDelete={handleDeleteLead}
+                onViewDetails={handleViewDetails}
               />
             ))}
           </div>
@@ -199,6 +259,21 @@ export default function LeadsPage() {
         description="Are you sure you want to delete this lead list? This action cannot be undone."
         isDeleting={isDeleting}
       />
+
+      <CookieRefreshDialog
+        isOpen={cookieErrorDialogOpen}
+        onClose={() => setCookieErrorDialogOpen(false)}
+        onRefresh={handleRefreshCookies}
+      />
+
+      {selectedLead && (
+        <LeadDetailsDialog
+          isOpen={detailsDialogOpen}
+          onClose={() => setDetailsDialogOpen(false)}
+          leadId={selectedLead.id}
+          leadName={selectedLead.name}
+        />
+      )}
     </div>
   );
 }

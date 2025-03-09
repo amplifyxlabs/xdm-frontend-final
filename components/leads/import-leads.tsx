@@ -35,7 +35,7 @@ export default function ImportLeads({ onBack, refreshLeads }: ImportLeadsProps) 
   const [followerRange, setFollowerRange] = useState([0, 100000]);
   const [followingRange, setFollowingRange] = useState([0, 100000]);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [expandedFilter, setExpandedFilter] = useState<string | null>(null);
+  const [expandedFilter, setExpandedFilter] = useState<string | null>("followers");
   const [remainingLeads, setRemainingLeads] = useState("~1.9K");
   const [filteredCount, setFilteredCount] = useState(0);
   const [leads, setLeads] = useState<Lead[]>(defaultLeads);
@@ -78,7 +78,6 @@ export default function ImportLeads({ onBack, refreshLeads }: ImportLeadsProps) 
 
     try {
       setLoading(true);
-      
       // Simply advance to the next step without scraping
       setStep(2);
     } catch (error) {
@@ -112,7 +111,7 @@ export default function ImportLeads({ onBack, refreshLeads }: ImportLeadsProps) 
       // Wait for response to ensure API was called
       await response.json();
       
-      // Refresh leads list and navigate back
+      // Refresh leads list before navigating back
       if (refreshLeads) {
         await refreshLeads();
       }
@@ -123,7 +122,7 @@ export default function ImportLeads({ onBack, refreshLeads }: ImportLeadsProps) 
       console.error('Error saving leads:', error);
       setError(error instanceof Error ? error.message : "Failed to save leads");
     } finally {
-      setLoading(false);
+      // Don't set loading to false here - we're navigating away
     }
   };
 
@@ -133,40 +132,31 @@ export default function ImportLeads({ onBack, refreshLeads }: ImportLeadsProps) 
       subtitle: "Import your lead sources",
     },
     {
-      title: "Apply Filters",
-      subtitle: "Filter your leads",
-    },
-    {
-      title: "Preview and Save",
-      subtitle: "Review and save leads",
+      title: "Apply Filters & Save",
+      subtitle: "Filter your leads and save them",
     },
   ];
 
   const filterOptions: FilterOption[] = [
     {
-      title: "Number of Followers",
-      description: "Filter Leads by the number of followers they have",
+      title: "Followers",
+      description: "Filter the followers of the selected profile.",
       key: "followers",
     },
     {
-      title: "Number of Following",
-      description: "Filter Leads by the number of accounts they follow",
+      title: "Following",
+      description: "Filter the followings of the selected profile.",
       key: "following",
     },
     {
       title: "Verified Followers",
-      description: "Filter Leads by verified followers",
+      description: "Filter the verified followers of the selected profile.",
       key: "verifiedFollowers",
     },
     {
       title: "Followers you know",
-      description: "Filter Leads by followers you know",
+      description: "Filter the followers you know of the selected profile.",
       key: "followersYouKnow",
-    },
-    {
-      title: "Subscriptions",
-      description: "Filter Leads by subscriptions",
-      key: "subscriptions",
     }
   ];
 
@@ -262,7 +252,7 @@ export default function ImportLeads({ onBack, refreshLeads }: ImportLeadsProps) 
         <Card className="border border-gray-200 shadow-lg rounded-xl overflow-hidden">
           {/* Steps Navigation */}
           <div className="bg-white border-b border-gray-200">
-            <div className="grid grid-cols-3 divide-x divide-gray-200">
+            <div className="grid grid-cols-2 divide-x divide-gray-200">
               {steps.map((stepItem, index) => {
                 const stepNumber = index + 1;
                 const isActive = step === stepNumber;
@@ -426,22 +416,13 @@ export default function ImportLeads({ onBack, refreshLeads }: ImportLeadsProps) 
               </div>
             )}
             {step === 2 && (
-              <div
-                className="max-w-[95%] mx-auto space-y-10"
-                data-oid="lc3q.za"
-              >
-                <div
-                  className="flex justify-between items-center"
-                  data-oid="aismq8m"
-                >
-                  <div data-oid="wgy219r">
-                    <h2
-                      className="text-3xl font-semibold text-gray-900"
-                      data-oid="txbtsst"
-                    >
-                      Filter Your Leads
+              <div className="max-w-[95%] mx-auto space-y-8">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-gray-900">
+                      Filter Your Leads & Save
                     </h2>
-                    <p className="text-gray-500 mt-2" data-oid="vmf8zwh">
+                    <p className="text-gray-500 mt-2">
                       Select criteria to refine your leads list
                     </p>
                   </div>
@@ -449,80 +430,16 @@ export default function ImportLeads({ onBack, refreshLeads }: ImportLeadsProps) 
                     variant="outline"
                     size="lg"
                     className="text-gray-700 hover:bg-purple-50"
-                    data-oid="a82rmjd"
                   >
-                    <Plus className="h-4 w-4 mr-2" data-oid="i377.7b" /> Watch
-                    Tutorial
+                    <Plus className="h-4 w-4 mr-2" /> Watch Tutorial
                   </Button>
                 </div>
-                <div className="grid grid-cols-3 gap-6" data-oid="xn5eqlt">
-                  {filterOptions.map((option) => (
-                    <Card
-                      key={option.key}
-                      className={`border-2 p-8 cursor-pointer transition-all hover:shadow-lg ${expandedFilter === option.key ? "ring-2 ring-purple-600 border-purple-600 bg-purple-50" : "hover:border-purple-300"}`}
-                      onClick={() => handleFilterSelect(option.key)}
-                      data-oid="b3pb74p"
-                    >
-                      <div
-                        className="flex justify-between items-start"
-                        data-oid="u9r3ehf"
-                      >
-                        <div data-oid="1_d46ix">
-                          <h3
-                            className="font-semibold text-xl mb-2 text-gray-900"
-                            data-oid="ehxjy69"
-                          >
-                            {option.title}
-                          </h3>
-                          <p className="text-gray-600" data-oid="_mbpaly">
-                            {option.description}
-                          </p>
-                        </div>
-                        <div
-                          className={`p-2 rounded-full ${expandedFilter === option.key ? "bg-purple-100" : "bg-gray-100"}`}
-                          data-oid="5z3o0ga"
-                        >
-                          <Plus
-                            className={`h-5 w-5 transition-transform ${expandedFilter === option.key ? "rotate-45 text-purple-600" : "text-gray-600"}`}
-                            data-oid="lp015wu"
-                          />
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-                <div className="flex justify-end pt-8" data-oid="sfe3jd5">
-                  <Button
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-16 py-6 text-xl rounded-xl shadow-lg hover:shadow-xl transition-all"
-                    onClick={() => setStep(3)}
-                    data-oid="q_qt09:"
-                  >
-                    Preview Results
-                  </Button>
-                </div>
-              </div>
-            )}
-            {step === 3 && (
-              <div className="max-w-[95%] mx-auto space-y-8" data-oid=":a0bxe3">
-                <div className="text-center space-y-4" data-oid="xprb__1">
-                  <h2
-                    className="text-3xl font-semibold text-gray-900"
-                    data-oid="afgqy77"
-                  >
-                    Preview and Save Leads
-                  </h2>
-                  <p className="text-gray-500" data-oid="_vvhd:h">
-                    Review your filtered leads before saving
-                  </p>
-                </div>
-
-                {/* Add Leads Name Input */}
+                
+                {/* Move Leads Name Input to the top */}
                 <div className="border-2 rounded-xl p-8 bg-white shadow-sm space-y-6">
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
-                      <Label className="text-sm text-gray-500 mb-2 block">
-                        Leads Name
-                      </Label>
+                      <Label className="text-sm text-gray-500 mb-2 block">Leads Name</Label>
                       <Input
                         className="border-2 rounded-xl text-lg py-6 px-6 shadow-sm hover:border-gray-400 focus:border-black transition-colors"
                         placeholder="Enter a name for your leads"
@@ -555,35 +472,58 @@ export default function ImportLeads({ onBack, refreshLeads }: ImportLeadsProps) 
                     </div>
                   </div>
                 </div>
-
-                <div className="border-2 rounded-xl p-8 bg-white shadow-sm">
-                  <div className="space-y-6">
-                    <div className="flex justify-between items-center border-b pb-4">
-                      <h3 className="text-xl font-semibold text-gray-900">
-                        Preview Leads
-                      </h3>
-                      <div className="bg-gray-100 text-gray-700 px-4 py-2 rounded-full font-medium">
-                        {scrapedFollowers.length} Leads Found
+                
+                {/* Filter options grid moved below */}
+                <div className="grid grid-cols-3 gap-6">
+                  {filterOptions.map((option) => (
+                    <Card
+                      key={option.key}
+                      className={`border-2 p-8 cursor-pointer transition-all hover:shadow-lg ${expandedFilter === option.key ? "ring-2 ring-purple-600 border-purple-600 bg-purple-50" : "hover:border-purple-300"}`}
+                      onClick={() => handleFilterSelect(option.key)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold text-xl mb-2 text-gray-900">
+                            {option.title}
+                          </h3>
+                          <p className="text-gray-600">
+                            {option.description}
+                          </p>
+                        </div>
+                        <div
+                          className={`p-2 rounded-full ${expandedFilter === option.key ? "bg-purple-100" : "bg-gray-100"}`}
+                        >
+                          <Plus
+                            className={`h-5 w-5 transition-transform ${expandedFilter === option.key ? "rotate-45 text-purple-600" : "text-gray-600"}`}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <LeadsList leads={scrapedFollowers} />
-                  </div>
+                    </Card>
+                  ))}
                 </div>
-
+                
+                {/* Bottom buttons */}
                 <div className="flex justify-end gap-4 pt-4">
                   <Button
                     variant="outline"
                     className="px-12 py-6 text-lg hover:bg-gray-50"
-                    onClick={() => setStep(2)}
+                    onClick={() => setStep(1)}
                   >
-                    Back to Filters
+                    Back
                   </Button>
                   <Button
                     className="bg-black hover:bg-gray-800 text-white px-16 py-6 text-xl rounded-xl shadow-lg hover:shadow-xl transition-all"
                     onClick={handleSaveLeads}
-                    disabled={!leadsName.trim()}
+                    disabled={!leadsName.trim() || loading}
                   >
-                    Save Leads
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Saving Leads...
+                      </>
+                    ) : (
+                      'Save Leads'
+                    )}
                   </Button>
                 </div>
               </div>

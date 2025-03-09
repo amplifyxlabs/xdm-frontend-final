@@ -95,6 +95,9 @@ export default function TwitterAccounts({ userId }: { userId: string }) {
       const cookies = JSON.parse(cookiesInput);
       setConnecting(true);
 
+      // Get the lead ID if it exists
+      const leadId = sessionStorage.getItem('authErrorLeadId');
+      
       const response = await fetch("/api/twitter/store-cookies", {
         method: "POST",
         headers: {
@@ -104,6 +107,7 @@ export default function TwitterAccounts({ userId }: { userId: string }) {
           cookies,
           twitterAccountName: twitterAccountName.trim(),
           userId, // Pass the userId to the API
+          leadId
         }),
       });
 
@@ -114,6 +118,9 @@ export default function TwitterAccounts({ userId }: { userId: string }) {
           data.error || data.details || "Failed to store cookies",
         );
       }
+
+      // Clear from session storage
+      sessionStorage.removeItem('authErrorLeadId');
 
       setConnecting(false);
       setConnectDialogOpen(false);

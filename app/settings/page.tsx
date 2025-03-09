@@ -7,9 +7,27 @@ import TwitterAccounts from "@/components/settings/twitter-accounts";
 import DoNotContact from "@/components/settings/do-not-contact";
 import { useUser } from "@/contexts/user-context";
 import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function SettingsPage() {
   const { userId, isLoading } = useUser();
+  const [activeTab, setActiveTab] = useState("profile");
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Check if tab parameter exists and set active tab accordingly
+    const tabParam = searchParams?.get("tab");
+    if (tabParam === "twitter") {
+      setActiveTab("twitter");
+    } else if (tabParam === "subscription") {
+      setActiveTab("subscription");
+    } else if (tabParam === "dnc") {
+      setActiveTab("dnc");
+    } else {
+      setActiveTab("profile"); // Default to profile if no valid tab is specified
+    }
+  }, [searchParams]);
 
   if (isLoading) {
     return (
@@ -34,7 +52,7 @@ export default function SettingsPage() {
         </h1>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-6" data-oid="sdu2iiv">
+      <Tabs defaultValue={activeTab || "profile"} className="space-y-6" data-oid="sdu2iiv">
         <TabsList data-oid="r71a6ue">
           <TabsTrigger value="profile" data-oid="f4qbx_d">
             Profile

@@ -12,6 +12,7 @@ interface LeadListCardProps {
   status?: string;
   onCreateAutomation: () => void;
   onDelete: (id: string) => void;
+  onViewDetails: (id: string, name: string) => void;
 }
 
 export default function LeadListCard({
@@ -22,13 +23,17 @@ export default function LeadListCard({
   status,
   onCreateAutomation,
   onDelete,
+  onViewDetails,
 }: LeadListCardProps) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const isLoading = status === 'in_progress';
 
   return (
     <>
-      <Card className="border border-gray-200 hover:border-gray-300 transition-all">
+      <Card 
+        className="border border-gray-200 hover:border-gray-300 transition-all cursor-pointer"
+        onClick={() => onViewDetails(id, name)}
+      >
         <CardContent className="p-4 sm:p-6">
           {/* Name and creation date */}
           <div className="mb-4">
@@ -58,7 +63,10 @@ export default function LeadListCard({
               variant="outline"
               size="sm"
               className="border flex-1 min-w-[100px]"
-              onClick={() => setIsConfirmOpen(true)}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent card click
+                setIsConfirmOpen(true);
+              }}
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Delete
@@ -67,7 +75,10 @@ export default function LeadListCard({
               className="border flex-1 min-w-[100px]" 
               variant="outline" 
               size="sm"
-              onClick={onCreateAutomation}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent card click
+                onCreateAutomation();
+              }}
             >
               <Play className="h-4 w-4 mr-2" />
               Automate
