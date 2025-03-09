@@ -124,6 +124,22 @@ export default function CampaignPage() {
       const messageData = await messageResponse.json();
       const campaignId = messageData.message.id;
 
+      // Send campaign notification email
+      try {
+        await fetch("/api/send-campaign-notification", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            campaignName,
+            recipientCount: recipientIds?.length || 0,
+            userId
+          }),
+        });
+      } catch (emailError) {
+        console.error('Error sending campaign notification email:', emailError);
+        // Continue with campaign creation even if email notification fails
+      }
+
       const response = await fetch("/api/send-DM", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
